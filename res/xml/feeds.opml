@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<opml version="1.0">
+    <head>
+        <title>FeedGoal Subscriptions</title>
+    </head>
+    <body>
+    	<outline text="Efecto Tequila" title="Efecto Tequila" htmlUrl="http://efectotequila.com" xmlUrl="http://efectotequila.com/rss2.php" type="atom"/>
+    </body>
+</opml>
