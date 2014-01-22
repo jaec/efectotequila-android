@@ -4,4 +4,5 @@
 .settings
 project.properties
 .DS_Store
+lint.xml
 gen/
