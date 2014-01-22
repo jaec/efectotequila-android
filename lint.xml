@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<lint>
-    <issue id="ResourceAsColor">
-        <ignore path="src/com/lapurabanda/android/feedgoal/FeedItemActivity.java" />
-    </issue>
-</lint>
