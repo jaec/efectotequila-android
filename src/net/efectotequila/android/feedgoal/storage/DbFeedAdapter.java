@@ -200,6 +200,10 @@ public class DbFeedAdapter {
                         feed.setType(parser.getAttributeValue(null,"type"));
                         feed.setEnabled(DbSchema.ON);
                         feeds.add(feed);
+                        //if(feed != null) {
+                    	System.out.println("feeeeeeeeeeeeeeeeeeed: " + feed);
+                    	Log.w(LOG_TAG, "feeeeeeeeeeeeeeeeeeeeeeeeed: " + feed);
+                        //}
                     }
                 }
                 eventType = parser.next();
@@ -539,6 +543,7 @@ public class DbFeedAdapter {
 					item.setFavorite(cursor.getInt(cursor.getColumnIndex(DbSchema.ItemSchema.COLUMN_FAVORITE)));
 					item.setRead(cursor.getInt(cursor.getColumnIndex(DbSchema.ItemSchema.COLUMN_READ)));
 					item.setEnclosures(getEnclosures(id, 1, -1));
+					item.setVotes(cursor.getInt(cursor.getColumnIndex(DbSchema.ItemSchema.COLUMN_VOTES)));
 					cursor.moveToNext();
 				}
 			} else {
@@ -797,6 +802,7 @@ public class DbFeedAdapter {
     	else
     		state = DbSchema.ON;
     	values.put(DbSchema.ItemSchema.COLUMN_READ, state);
+    	values.put(DbSchema.ItemSchema.COLUMN_VOTES, item.getVotes());
     	return values;
     }
     

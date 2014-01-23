@@ -36,6 +36,7 @@ import net.efectotequila.android.feedgoal.common.Enclosure;
 import net.efectotequila.android.feedgoal.common.Feed;
 import net.efectotequila.android.feedgoal.common.Item;
 import net.efectotequila.android.feedgoal.storage.SharedPreferencesHelper;
+import net.efectotequila.android.feedgoal.util.URLReader;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
@@ -285,6 +286,9 @@ public class FeedHandler extends DefaultHandler {
 					imgTagsReplaced = StringUtils.replace(imgTagsReplaced, "</a>", "</espan>");
 					mItem.setContent(imgTagsReplaced);*/
 					mItem.setContent(mSb.toString().trim());
+					
+					/** meneos **/
+					mItem.setVotes(getMeneos(mItem.getContent()));
 				}
 				isDescription = false;
 			} else if (value.equalsIgnoreCase("encoded")
@@ -297,6 +301,9 @@ public class FeedHandler extends DefaultHandler {
 					imgTagsReplaced = StringUtils.replace(imgTagsReplaced, "</a>", "</espan>");
 					mItem.setContent(imgTagsReplaced);*/
 					mItem.setContent(mSb.toString().trim());
+					
+					/** meneos **/
+					mItem.setVotes(getMeneos(mItem.getContent()));
 				}
 				isContent = false;
 			} else if (value.equalsIgnoreCase("source"))
@@ -317,6 +324,32 @@ public class FeedHandler extends DefaultHandler {
 				isEnclosure = false;
 			}
 		}
+	}
+	
+	private int getMeneos(String content) {
+		String id = "";
+		int s = StringUtils.indexOf(content, "id=");
+		id = StringUtils.substring(content, s);
+		int e = StringUtils.indexOf(id, "\"");
+		id = StringUtils.substring(id, 3, e).trim();
+		//String votes = "";
+		
+		try {
+			String meneos = new URLReader("https://www.efectotequila.com/backend/meneos.php?id=" + id).read().toString();
+			if(!meneos.equals("")) {
+				int v = StringUtils.countMatches(meneos, "href=\"/user/");
+				//votes = String.valueOf(v);
+				return v;
+			}
+		} catch (MalformedURLException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		return 0;
 	}
 
 	public void characters(char[] ch, int start, int length)

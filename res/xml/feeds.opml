@@ -5,5 +5,6 @@
     </head>
     <body>
     	<outline text="Efecto Tequila" title="Efecto Tequila" htmlUrl="http://efectotequila.com" xmlUrl="http://efectotequila.com/rss2.php" type="atom"/>
+    	<outline text="Efecto Tequila Pendientes" title="Efecto Tequila Pendientes" htmlUrl="http://efectotequila.com" xmlUrl="http://efectotequila.com/rss2.php?status=queued" type="atom"/>
     </body>
 </opml>

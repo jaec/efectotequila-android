@@ -65,7 +65,7 @@ public class FeedChannelsActivity extends Activity implements OnItemClickListene
 	boolean mMustParseFeed = false;
 	URL mUrl = null; 
 	Uri mUri = null;
-	private Object dummy = null;
+	//private Object dummy = null;
 	
 	@Override
     public void onCreate(Bundle savedInstanceState) {

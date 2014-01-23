@@ -16,6 +16,7 @@
 package net.efectotequila.android.feedgoal;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -30,7 +31,9 @@ import net.efectotequila.android.feedgoal.storage.DbSchema;
 import net.efectotequila.android.feedgoal.storage.SharedPreferencesHelper;
 import net.efectotequila.android.feedgoal.util.DrawableUtils;
 import net.efectotequila.android.feedgoal.util.FontUtils;
+import net.efectotequila.android.feedgoal.util.URLReader;
 
+import org.apache.commons.lang3.StringUtils;
 import org.xml.sax.SAXException;
 
 import android.app.AlertDialog;
@@ -71,6 +74,7 @@ public class FeedTabActivity extends TabActivity implements OnItemClickListener 
 	private long errorId = 0;
 
 	private static final String TAB_CHANNEL_TAG = "tab_tag_channel";
+	private static final String TAB_CHANNEL_PENDIENTES_TAG = "tab_tag_pendientes_channel";
 	private static final String TAB_FAV_TAG = "tab_tag_favorite";
 
 	private static final int KILL_ACTIVITY_CODE = 1;
@@ -114,7 +118,11 @@ public class FeedTabActivity extends TabActivity implements OnItemClickListener 
 		 */
 
 		long feedId = SharedPreferencesHelper.getPrefTabFeedId(this,
-				mDbFeedAdapter.getFirstFeed().getId());
+				//mDbFeedAdapter.getFirstFeed().getId());
+				mDbFeedAdapter.getFeeds().get(0).getId());
+		/*long feedPendientesId = SharedPreferencesHelper.getPrefTabFeedId(this,
+				//mDbFeedAdapter.getFirstFeed().getId());
+				mDbFeedAdapter.getFeeds().get(1).getId());*/
 
 		Bundle extras = getIntent().getExtras();
 		if (extras != null) {
@@ -122,7 +130,7 @@ public class FeedTabActivity extends TabActivity implements OnItemClickListener 
 			SharedPreferencesHelper.setPrefTabFeedId(this, feedId);
 		}
 
-		Feed currentTabFeed = mDbFeedAdapter.getFeed(feedId);
+		//Feed currentTabFeed = mDbFeedAdapter.getFeed(feedId);
 		// setTabs(TAB_CHANNEL_TAG, currentTabFeed.getTitle());
 		setTabs(TAB_CHANNEL_TAG, "Portada");
 
@@ -130,32 +138,49 @@ public class FeedTabActivity extends TabActivity implements OnItemClickListener 
 			@Override
 			public void onTabChanged(String tabId) {
 				if (tabId.equals(TAB_FAV_TAG)) {
-					List<Item> items = fillListData(R.id.favoritelist);
+					List<Item> items = fillListData(R.id.favoritelist, -1);
 					if (items.isEmpty())
 						Toast.makeText(FeedTabActivity.this,
 								R.string.no_fav_msg, Toast.LENGTH_LONG).show();
 				} else if (tabId.equals(TAB_CHANNEL_TAG)) {
-					Feed currentTabFeed = mDbFeedAdapter
+					Feed currentTabFeed = /*mDbFeedAdapter
 							.getFeed(SharedPreferencesHelper.getPrefTabFeedId(
-									FeedTabActivity.this, mDbFeedAdapter
-											.getFirstFeed().getId()));
+									FeedTabActivity.this, 
+									//mDbFeedAdapter.getFirstFeed().getId()));
+									mDbFeedAdapter.getFeeds().get(0).getId()));*/
+							mDbFeedAdapter.getFeeds().get(0);
 					if (currentTabFeed != null
 							&& outofdate(currentTabFeed.getId()))
-						refreshFeed(currentTabFeed, false);
+						refreshFeed(currentTabFeed, false, R.id.feedlist);
 					else
-						fillListData(R.id.feedlist);
+						fillListData(R.id.feedlist, currentTabFeed.getId());
+				} else if (tabId.equals(TAB_CHANNEL_PENDIENTES_TAG)) {
+					Feed currentTabFeed = /*mDbFeedAdapter
+							.getFeed(SharedPreferencesHelper.getPrefTabFeedId(
+									FeedTabActivity.this, 
+									//mDbFeedAdapter.getFirstFeed().getId()));
+									mDbFeedAdapter.getFeeds().get(1).getId()));*/
+							mDbFeedAdapter.getFeeds().get(1);
+					if (currentTabFeed != null
+							&& outofdate(currentTabFeed.getId()))
+						refreshFeed(currentTabFeed, false, R.id.feedpendienteslist);
+					else
+						fillListData(R.id.feedpendienteslist, currentTabFeed.getId());
 				}
 				setTabsBackgroundColor();
 			}
 		});
 
 		ListView feedListView = (ListView) findViewById(R.id.feedlist);
+		ListView feedPendientesListView = (ListView) findViewById(R.id.feedpendienteslist);
 		ListView favoriteListView = (ListView) findViewById(R.id.favoritelist);
 
 		registerForContextMenu(feedListView);
+		registerForContextMenu(feedPendientesListView);
 		registerForContextMenu(favoriteListView);
 
 		feedListView.setOnItemClickListener(this);
+		feedPendientesListView.setOnItemClickListener(this);
 		favoriteListView.setOnItemClickListener(this);
 
 		ViewGroup godfatherView = (ViewGroup) this.getWindow().getDecorView();
@@ -173,14 +198,36 @@ public class FeedTabActivity extends TabActivity implements OnItemClickListener 
 		super.onResume();
 
 		if (getTabHost().getCurrentTabTag().equals(TAB_CHANNEL_TAG)) {
-			Feed currentTabFeed = mDbFeedAdapter
+			Feed currentTabFeed = /*mDbFeedAdapter
 					.getFeed(SharedPreferencesHelper.getPrefTabFeedId(
-							FeedTabActivity.this, mDbFeedAdapter.getFirstFeed()
-									.getId()));
+							FeedTabActivity.this, 
+							//mDbFeedAdapter.getFirstFeed().getId()));
+							mDbFeedAdapter.getFeeds().get(0).getId()));*/
+					mDbFeedAdapter.getFeeds().get(0);
 			if (currentTabFeed != null && outofdate(currentTabFeed.getId()))
-				refreshFeed(currentTabFeed, false);
+				refreshFeed(currentTabFeed, false, R.id.feedlist);
 			else {
-				fillListData(R.id.feedlist);
+				fillListData(R.id.feedlist, currentTabFeed.getId());
+				// Show Startup Dialog on update when refresh was recently
+				// executed and not required to be executed again
+				if (SharedPreferencesHelper.getPrefStartupDialogOnUpdate(this,
+						false)) {
+					showDialog(SharedPreferencesHelper.DIALOG_STARTUP);
+					SharedPreferencesHelper.setPrefStartupDialogOnUpdate(
+							FeedTabActivity.this, false);
+				}
+			}
+		} else if (getTabHost().getCurrentTabTag().equals(TAB_CHANNEL_PENDIENTES_TAG)) {
+			Feed currentTabFeed = /*mDbFeedAdapter
+					.getFeed(SharedPreferencesHelper.getPrefTabFeedId(
+							FeedTabActivity.this, 
+							//mDbFeedAdapter.getFirstFeed().getId()));
+							mDbFeedAdapter.getFeeds().get(1).getId()));*/
+					mDbFeedAdapter.getFeeds().get(1);
+			if (currentTabFeed != null && outofdate(currentTabFeed.getId()))
+				refreshFeed(currentTabFeed, false, R.id.feedpendienteslist);
+			else {
+				fillListData(R.id.feedpendienteslist, currentTabFeed.getId());
 				// Show Startup Dialog on update when refresh was recently
 				// executed and not required to be executed again
 				if (SharedPreferencesHelper.getPrefStartupDialogOnUpdate(this,
@@ -214,6 +261,12 @@ public class FeedTabActivity extends TabActivity implements OnItemClickListener 
 		
 		if (view != null) {
 			DrawableUtils.unbindDrawables(view);
+		}
+		
+		View viewpendientes = findViewById(R.id.feedpendienteslist);
+		
+		if (viewpendientes != null) {
+			DrawableUtils.unbindDrawables(viewpendientes);
 		}
 		
 		View view2 = findViewById(R.id.favoritelist);
@@ -271,6 +324,9 @@ public class FeedTabActivity extends TabActivity implements OnItemClickListener 
 				getTabHost().newTabSpec(TAB_CHANNEL_TAG).setIndicator(title)
 						.setContent(R.id.feedlist));
 		getTabHost().addTab(
+				getTabHost().newTabSpec(TAB_CHANNEL_PENDIENTES_TAG).setIndicator(getResources().getText(R.string.pendientes))
+						.setContent(R.id.feedpendienteslist));
+		getTabHost().addTab(
 				getTabHost()
 						.newTabSpec(TAB_FAV_TAG)
 						.setIndicator(
@@ -291,10 +347,10 @@ public class FeedTabActivity extends TabActivity implements OnItemClickListener 
 				.setBackgroundColor(Color.TRANSPARENT); // selected
 	}
 
-	private void refreshFeed(Feed feed, boolean alwaysDisplayOfflineDialog) {
+	private void refreshFeed(Feed feed, boolean alwaysDisplayOfflineDialog, int list) {
 		if (SharedPreferencesHelper.isOnline(this)) {
 			mIsOnline = true;
-			new UpdateFeedTask().execute(feed);
+			new UpdateFeedTask(list).execute(feed);
 		} else {
 			if (mIsOnline || alwaysDisplayOfflineDialog) // May only display
 															// once the offline
@@ -303,7 +359,7 @@ public class FeedTabActivity extends TabActivity implements OnItemClickListener 
 															// experience
 				showDialog(SharedPreferencesHelper.DIALOG_NO_CONNECTION);
 			mIsOnline = false;
-			fillListData(R.id.feedlist);
+			fillListData(list, feed.getId());
 		}
 	}
 
@@ -341,13 +397,19 @@ public class FeedTabActivity extends TabActivity implements OnItemClickListener 
 	 * mDbFeedAdapter.getFeed(feedId).getTitle()); } }
 	 */
 	private List<Item> fillData() {
-		if (getTabHost().getCurrentTabTag().equals(TAB_FAV_TAG))
-			return fillListData(R.id.favoritelist);
-		else
-			return fillListData(R.id.feedlist);
+		if (getTabHost().getCurrentTabTag().equals(TAB_FAV_TAG)) {
+			return fillListData(R.id.favoritelist, -1);
+		} else if (getTabHost().getCurrentTabTag().equals(TAB_CHANNEL_TAG)) {
+			Feed feed = mDbFeedAdapter.getFeeds().get(0);
+			return fillListData(R.id.feedlist, feed.getId());
+		} else if (getTabHost().getCurrentTabTag().equals(TAB_CHANNEL_PENDIENTES_TAG)) {
+			Feed feed = mDbFeedAdapter.getFeeds().get(1);
+			return fillListData(R.id.feedpendienteslist, feed.getId());
+		} else
+			return null;
 	}
 
-	private List<Item> fillListData(int listResource) {
+	private List<Item> fillListData(int listResource, long feedId) {
 		ListView feedListView = (ListView) findViewById(listResource);
 
 		List<Item> items = null;
@@ -357,10 +419,12 @@ public class FeedTabActivity extends TabActivity implements OnItemClickListener 
 			// mDbFeedAdapter.getFavoriteItems(SharedPreferencesHelper.getPrefMaxItems(this));
 			items = mDbFeedAdapter.getFavoriteItems(0);
 		} else {
-			TrackerAnalyticsHelper.trackPageView(this, "/itemListView");
-			Feed currentFeed = mDbFeedAdapter.getFeed(SharedPreferencesHelper
-					.getPrefTabFeedId(this, mDbFeedAdapter.getFirstFeed()
-							.getId()));
+			TrackerAnalyticsHelper.trackPageView(this, "/itemListViewId" + feedId);
+			Feed currentFeed = /*mDbFeedAdapter.getFeed(SharedPreferencesHelper
+					.getPrefTabFeedId(this, 
+					//mDbFeedAdapter.getFirstFeed().getId()));
+					feedId));*/
+					mDbFeedAdapter.getFeed(feedId);
 			if (currentFeed != null && currentFeed.getRefresh() != null) {
 				CharSequence formattedUpdate = DateFormat.format(getResources()
 						.getText(R.string.update_format_pattern), currentFeed
@@ -370,10 +434,14 @@ public class FeedTabActivity extends TabActivity implements OnItemClickListener 
 				getWindow().setTitle(
 						getString(R.string.app_name) + " - " + formattedUpdate);
 			}
-			items = mDbFeedAdapter.getItems(SharedPreferencesHelper
-					.getPrefTabFeedId(this, mDbFeedAdapter.getFirstFeed()
-							.getId()), 1, SharedPreferencesHelper
-					.getPrefMaxItems(this));
+			items = /*mDbFeedAdapter.getItems(SharedPreferencesHelper
+					.getPrefTabFeedId(this, 
+							//mDbFeedAdapter.getFirstFeed().getId())
+							//feed.getId())
+							feedId)
+							, 1, SharedPreferencesHelper
+					.getPrefMaxItems(this));*/
+					mDbFeedAdapter.getItems(feedId, 1, SharedPreferencesHelper.getPrefMaxItems(this));
 		}
 
 		FeedArrayAdapter arrayAdapter = new FeedArrayAdapter(this, R.id.title,
@@ -465,9 +533,9 @@ public class FeedTabActivity extends TabActivity implements OnItemClickListener 
 							SharedPreferencesHelper.CHANNEL_SUBMENU_GROUP,
 							Menu.NONE, order, feed.getTitle());
 
-					if (feed.getId() == SharedPreferencesHelper
+					/*if (feed.getId() == SharedPreferencesHelper
 							.getPrefTabFeedId(this, mDbFeedAdapter
-									.getFirstFeed().getId()))
+									.getFirstFeed().getId()))*/
 						channelSubMenuItem.setChecked(true);
 
 					intent = new Intent(this, FeedTabActivity.class);
@@ -501,18 +569,32 @@ public class FeedTabActivity extends TabActivity implements OnItemClickListener 
 						"OptionMenu_RefreshFavoriteList", "Refresh", 1);
 				// Refreshing favorites will never find new favorite items,
 				// because they are local (not updated from Internet)
-				fillListData(R.id.favoritelist);
+				fillListData(R.id.favoritelist, -1);
 				Toast.makeText(this, R.string.no_new_fav_item_msg,
 						Toast.LENGTH_LONG).show();
 			} else if (getTabHost().getCurrentTabTag().equals(TAB_CHANNEL_TAG)) {
-				Feed currentTabFeed = mDbFeedAdapter
+				Feed currentTabFeed = /*mDbFeedAdapter
 						.getFeed(SharedPreferencesHelper.getPrefTabFeedId(this,
-								mDbFeedAdapter.getFirstFeed().getId()));
+								//mDbFeedAdapter.getFirstFeed().getId()));
+								mDbFeedAdapter.getFeeds().get(0).getId()));*/
+						mDbFeedAdapter.getFeeds().get(0);
 				if (currentTabFeed != null) {
 					TrackerAnalyticsHelper.trackEvent(this, LOG_TAG,
 							"OptionMenu_RefreshItemList", currentTabFeed
 									.getURL().toString(), 1);
-					refreshFeed(currentTabFeed, true);
+					refreshFeed(currentTabFeed, true, R.id.feedlist);
+				}
+			} else if (getTabHost().getCurrentTabTag().equals(TAB_CHANNEL_PENDIENTES_TAG)) {
+				Feed currentTabFeed = /*mDbFeedAdapter
+						.getFeed(SharedPreferencesHelper.getPrefTabFeedId(this,
+								//mDbFeedAdapter.getFirstFeed().getId()));
+								mDbFeedAdapter.getFeeds().get(1).getId()));*/
+						mDbFeedAdapter.getFeeds().get(1);
+				if (currentTabFeed != null) {
+					TrackerAnalyticsHelper.trackEvent(this, LOG_TAG,
+							"OptionMenu_RefreshItemList", currentTabFeed
+									.getURL().toString(), 1);
+					refreshFeed(currentTabFeed, true, R.id.feedpendienteslist);
 				}
 			}
 			return true;
@@ -845,6 +927,7 @@ public class FeedTabActivity extends TabActivity implements OnItemClickListener 
 			// }
 
 			TextView titleView = (TextView) view.findViewById(R.id.title);
+			TextView votesView = (TextView) view.findViewById(R.id.votes);
 			TextView channelView = (TextView) view.findViewById(R.id.channel); // only
 																				// displayed
 																				// in
@@ -854,6 +937,13 @@ public class FeedTabActivity extends TabActivity implements OnItemClickListener 
 			if (titleView != null) {
 				titleView.setTextSize(17f);
 				titleView.setText(item.getTitle());
+			}
+			if (votesView != null) {
+				//System.out.println("votesssssssssssssssssssssss");
+				votesView.setTextSize(19f);
+				//String id = "";
+				//String content = item.getContent();
+				votesView.setText("[ " + String.valueOf(item.getVotes()) + " ]"); //set votos
 			}
 			if (channelView != null) {
 				Feed feed = mDbFeedAdapter.getFeed(mDbFeedAdapter
@@ -882,9 +972,11 @@ public class FeedTabActivity extends TabActivity implements OnItemClickListener 
 	private class UpdateFeedTask extends AsyncTask<Feed, Void, Boolean> {
 		private long feedId = -1;
 		private long lastItemIdBeforeUpdate = -1;
+		private int listResource = -1;
 
-		public UpdateFeedTask() {
+		public UpdateFeedTask(int listResource) {
 			super();
+			this.listResource = listResource;
 		}
 
 		protected Boolean doInBackground(Feed... params) {
@@ -914,22 +1006,22 @@ public class FeedTabActivity extends TabActivity implements OnItemClickListener 
 				errorId = errorId + 1;
 				TrackerAnalyticsHelper.trackError(FeedTabActivity.this,
 						Long.toString(errorId), ioe.getMessage(), LOG_TAG);
-				return Boolean.valueOf(false);
+				return Boolean.FALSE;//valueOf(false);
 			} catch (SAXException se) {
 				Log.e(LOG_TAG, "", se);
 				errorId = errorId + 1;
 				TrackerAnalyticsHelper.trackError(FeedTabActivity.this,
 						Long.toString(errorId), se.getMessage(), LOG_TAG);
-				return Boolean.valueOf(false);
+				return Boolean.FALSE;//valueOf(false);
 			} catch (ParserConfigurationException pce) {
 				Log.e(LOG_TAG, "", pce);
 				errorId = errorId + 1;
 				TrackerAnalyticsHelper.trackError(FeedTabActivity.this,
 						Long.toString(errorId), pce.getMessage(), LOG_TAG);
-				return Boolean.valueOf(false);
+				return Boolean.FALSE;//valueOf(false);
 			}
 
-			return Boolean.valueOf(true);
+			return Boolean.TRUE;//valueOf(true);
 		}
 
 		protected void onPreExecute() {
@@ -937,7 +1029,7 @@ public class FeedTabActivity extends TabActivity implements OnItemClickListener 
 		}
 
 		protected void onPostExecute(Boolean result) {
-			fillListData(R.id.feedlist);
+			fillListData(listResource, feedId);
 			dismissDialog(SharedPreferencesHelper.DIALOG_UPDATE_PROGRESS);
 
 			// Show Startup Dialog

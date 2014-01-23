@@ -18,6 +18,18 @@
     <style name="item_common_fav_icon">
         <item name="android:paddingRight">15dp</item>
     </style>
+    <style name="item_notselected_votes">
+        <item name="android:textSize">18dp</item>
+        <item name="android:textColor">@color/item_notselected_text</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:padding">5dp</item>
+    </style>
+    <style name="item_selected_votes">
+        <item name="android:textSize">18dp</item>
+        <item name="android:textColor">@color/item_selected_text</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:padding">5dp</item>
+    </style>
 	<style name="item_notselected_title" parent="@style/item_common_title">
         <item name="android:textColor">@color/item_notselected_text</item>
         <item name="android:textStyle">bold</item>

@@ -37,13 +37,14 @@ public class Item {
 	private boolean mFavorite = false;
 	private boolean mRead = false;
 	private List<Enclosure> mEnclosures;
+	private int votes = 0;
 	
 	public Item() {
 		mEnclosures = new ArrayList<Enclosure>();
 		mPubdate = new Date();
 	}
 	
-	public Item(long id, URL link, String guid, String title, String description, String content, URL image, Date pubdate, boolean favorite, boolean read, List<Enclosure> enclosures) {
+	public Item(long id, URL link, String guid, String title, String description, String content, URL image, Date pubdate, boolean favorite, boolean read, List<Enclosure> enclosures, int votes) {
 		super();
 		this.mId = id;
 		this.mLink = link;
@@ -56,6 +57,15 @@ public class Item {
 		this.mFavorite = favorite;
 		this.mRead = read;
 		this.mEnclosures = enclosures;
+		this.votes = votes;
+	}
+	
+	public void setVotes(int votes) {
+		this.votes = votes;
+	}
+	
+	public int getVotes() {
+		return this.votes;
 	}
 	
 	public void setId(long id) {

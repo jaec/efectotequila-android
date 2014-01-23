@@ -135,7 +135,13 @@ public class Feed {
 	}
 	
 	public String toString() {
-		String s = "{ID=" + this.mId + " URL=" + this.mURL.toString() + " homepage=" + this.mHomePage.toString() + " title=" + this.mTitle + " type=" + this.mType + " update=" + this.mRefresh.toString() + " enabled=" + this.mEnabled;
+		String s = "{ID=" + this.mId +
+				" URL=" + this.mURL.toString() +
+				" homepage=" + this.mHomePage.toString() +
+				" title=" + this.mTitle +
+				" type=" + this.mType + 
+				(this.mRefresh != null ? (" update=" + this.mRefresh.toString()) : "" ) +
+				" enabled=" + this.mEnabled;
 		s = s + " items={";
 		Iterator<Item> iterator = this.mItems.iterator();
 		while (iterator.hasNext()) {
