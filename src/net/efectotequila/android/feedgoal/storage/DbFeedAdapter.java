@@ -449,11 +449,19 @@ public class DbFeedAdapter {
     	return values;
     }
     
-    public boolean updateFeed(Feed feed) {  	
-    	return updateFeed(feed.getId(), getUpdateContentValues(feed), feed.getItems());
+    public boolean updateFeed(Feed feed, boolean deleteItemsBefore) {  	
+    	return updateFeed(feed.getId(), getUpdateContentValues(feed), feed.getItems(), deleteItemsBefore);
     }
     
-    public boolean updateFeed(long id, ContentValues values, List<Item> items) {
+    public boolean updateFeed(long id, ContentValues values, List<Item> items, boolean deleteItemsBefore) {
+    	System.out.println("update feddddddd");
+    	
+    	boolean itemsDeleted = false;
+    	
+    	if(deleteItemsBefore) {
+    		itemsDeleted = (mDb.delete(DbSchema.ItemSchema.TABLE_NAME, DbSchema.ItemSchema.COLUMN_FEED_ID + "=?", new String[]{Long.toString(id)}) > 0);
+    	}
+    	
     	boolean feedUpdated = (mDb.update(DbSchema.FeedSchema.TABLE_NAME, values, DbSchema.FeedSchema._ID + "=?", new String[]{Long.toString(id)}) > 0);
     	
     	if (feedUpdated && items != null) {

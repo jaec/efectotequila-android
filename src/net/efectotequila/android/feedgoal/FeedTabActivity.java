@@ -991,8 +991,12 @@ public class FeedTabActivity extends TabActivity implements OnItemClickListener 
 				Feed handledFeed = feedHandler.handleFeed(params[0].getURL());
 
 				handledFeed.setId(feedId);
-
-				mDbFeedAdapter.updateFeed(handledFeed);
+				
+				if(mDbFeedAdapter.getFeeds().get(1).getId() == feedId) {
+					mDbFeedAdapter.updateFeed(handledFeed, true);
+				} else {
+					mDbFeedAdapter.updateFeed(handledFeed, false);
+				}
 				// mDbFeedAdapter.updateFeed(handledFeed.getId(),
 				// mDbFeedAdapter.getUpdateContentValues(handledFeed),
 				// handledFeed.getItems());
@@ -1048,12 +1052,13 @@ public class FeedTabActivity extends TabActivity implements OnItemClickListener 
 			Item lastItem = mDbFeedAdapter.getLastItem(feedId);
 			if (lastItem != null)
 				lastItemIdAfterUpdate = lastItem.getId();
-			if (lastItemIdAfterUpdate > lastItemIdBeforeUpdate)
+			//message "hay nuevas entradas"
+			/*if (lastItemIdAfterUpdate > lastItemIdBeforeUpdate)
 				Toast.makeText(FeedTabActivity.this, R.string.new_item_msg,
 						Toast.LENGTH_LONG).show();
 			else
 				Toast.makeText(FeedTabActivity.this, R.string.no_new_item_msg,
-						Toast.LENGTH_LONG).show();
+						Toast.LENGTH_LONG).show();*/
 		}
 	}
 }
